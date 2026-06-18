@@ -42,7 +42,7 @@ export const CLASSROOM_PAIRS: CardPair[] = [
     id: 'nouakchott_mosque',
     question: 'Dans quelle ville se trouve la grande mosquée de Nouakchott ?',
     answer: 'Nouakchott',
-    svg: <img src="/images/nouakchott_mosque.jpg" className="w-full h-full object-cover" alt="Mosquée Nouakchott" />
+    svg: <img src="/images/nouakchott_mosque.PNG" className="w-full h-full object-cover" alt="Mosquée Nouakchott" />
   },
   {
     id: 'banc_arguin',
@@ -54,7 +54,7 @@ export const CLASSROOM_PAIRS: CardPair[] = [
     id: 'capitale_mauritanie',
     question: 'Quelle ville est la capitale de la Mauritanie ?',
     answer: 'Nouakchott',
-    svg: <img src="/images/capitale_mauritanie.jpg" className="w-full h-full object-cover" alt="Nouakchott Mauritanie" />
+    svg: <img src="/images/capitale_mauritanie.PNG" className="w-full h-full object-cover" alt="Nouakchott Mauritanie" />
   },
   {
     id: 'chinguetti',
@@ -66,6 +66,6 @@ export const CLASSROOM_PAIRS: CardPair[] = [
     id: 'mechoui',
     question: 'Dans quel pays est originaire le méchoui mauritanien ?',
     answer: 'Mauritanie',
-    svg: <img src="/images/mechoui.jpg" className="w-full h-full object-cover" alt="Méchoui" />
+    svg: <img src="/images/mechoui.PNG" className="w-full h-full object-cover" alt="Méchoui" />
   }
 ];
