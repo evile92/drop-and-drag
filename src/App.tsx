@@ -151,26 +151,25 @@ function NotebookPaperScrap({ question, isMatched = false }: { question: string;
 
 function TransparentTape() {
   return (
-    <div className="absolute top-[41%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 md:w-32 h-6 md:h-8 z-30 pointer-events-none select-none opacity-80 rotate-[-5deg] overflow-hidden">
-      <svg viewBox="0 0 100 30" className="w-full h-full drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.14)]">
-        <path d="M 0 4 L 3 1 L 6 4 L 9 1 L 12 4 L 15 1 L 18 4 L 21 1 L 24 4 L 27 1 L 30 4 L 33 1 L 36 4 L 39 1 L 42 4 L 45 1 L 48 4 L 51 1 L 54 4 L 57 1 L 60 4 L 63 1 L 66 4 L 69 1 L 72 4 L 75 1 L 78 4 L 81 1 L 84 4 L 87 1 L 90 4 L 93 1 L 96 4 L 100 1 L 100 26 L 96 29 L 93 26 L 90 29 L 87 26 L 84 29 L 81 26 L 78 29 L 75 26 L 72 29 L 69 26 L 66 29 L 63 26 L 60 29 L 57 26 L 54 29 L 51 26 L 48 29 L 45 26 L 42 29 L 39 26 L 36 29 L 33 26 L 30 29 L 27 26 L 24 29 L 21 26 L 18 29 L 15 26 L 12 29 L 9 26 L 6 29 L 3 26 L 0 29 Z" fill="rgba(255, 255, 255, 0.35)" stroke="rgba(255, 255, 255, 0.55)" strokeWidth="0.5" />
+    <div className="absolute top-[38%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 md:w-36 h-8 md:h-10 z-30 pointer-events-none select-none opacity-80 rotate-[-4deg] overflow-hidden">
+      <svg viewBox="0 0 100 30" className="w-full h-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
+        <path d="M 0 4 L 3 1 L 6 4 L 9 1 L 12 4 L 15 1 L 18 4 L 21 1 L 24 4 L 27 1 L 30 4 L 33 1 L 36 4 L 39 1 L 42 4 L 45 1 L 48 4 L 51 1 L 54 4 L 57 1 L 60 4 L 63 1 L 66 4 L 69 1 L 72 4 L 75 1 L 78 4 L 81 1 L 84 4 L 87 1 L 90 4 L 93 1 L 96 4 L 100 1 L 100 26 L 96 29 L 93 26 L 90 29 L 87 26 L 84 29 L 81 26 L 78 29 L 75 26 L 72 29 L 69 26 L 66 29 L 63 26 L 60 29 L 57 26 L 54 29 L 51 26 L 48 29 L 45 26 L 42 29 L 39 26 L 36 29 L 33 26 L 30 29 L 27 26 L 24 29 L 21 26 L 18 29 L 15 26 L 12 29 L 9 26 L 6 29 L 3 26 L 0 29 Z" fill="rgba(255, 255, 255, 0.45)" stroke="rgba(255, 255, 255, 0.6)" strokeWidth="1" />
       </svg>
     </div>
   );
 }
 
-// مكوّن خاص لبطاقة الصورة للتحكم بحجمها عن طريق الماوس (Zoom in/out)
+// تم تكبير حجم الصورة هنا
 function ZoomableImageWrapper({ children, isMatched }: { children: React.ReactNode, isMatched: boolean }) {
   const [scale, setScale] = useState(1);
 
   const handleWheel = (e: React.WheelEvent) => {
-    // نمنع تكبير الصورة إذا تم دمجها بالفعل
     if (isMatched) return;
     e.stopPropagation();
     if (e.deltaY < 0) {
-      setScale(prev => Math.min(prev + 0.1, 1.8)); // تكبير
+      setScale(prev => Math.min(prev + 0.1, 1.8)); 
     } else {
-      setScale(prev => Math.max(prev - 0.1, 0.6)); // تصغير
+      setScale(prev => Math.max(prev - 0.1, 0.6)); 
     }
   };
 
@@ -178,9 +177,8 @@ function ZoomableImageWrapper({ children, isMatched }: { children: React.ReactNo
     <div 
       onWheel={handleWheel}
       style={{ transform: `scale(${scale})`, transition: 'transform 0.1s ease-out' }}
-      className={`relative w-20 h-20 md:w-28 md:h-28 bg-white p-1.5 rounded-lg shadow-[1.5px_3px_8px_rgba(0,0,0,0.2)] border border-neutral-200/90 hover:shadow-[3px_6px_14px_rgba(0,0,0,0.25)] ${isMatched ? '' : 'hover:-translate-y-0.5'} transition-all duration-200`}
+      className={`relative w-24 h-24 md:w-32 md:h-32 bg-white p-1.5 rounded-lg shadow-[1.5px_3px_8px_rgba(0,0,0,0.2)] border border-neutral-200/90 hover:shadow-[3px_6px_14px_rgba(0,0,0,0.25)] ${isMatched ? '' : 'hover:-translate-y-0.5'} transition-all duration-200`}
     >
-      {/* دبوس التثبيت يختفي عند التطابق */}
       {!isMatched && (
         <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -212,7 +210,6 @@ function DraggableCard({ id, x, y, rotation, children }: { id: string; x: number
 export default function App() {
   const [images, setImages] = useState<CardPosition[]>([]);
   const [questions, setQuestions] = useState<CardPosition[]>([]);
-  // مصفوفة لتخزين العناصر المدمجة وإحداثياتها لكي تصبح قابلة للتحريك الحر
   const [matchedGroups, setMatchedGroups] = useState<CardPosition[]>([]);
   const [wrongMatches, setWrongMatches] = useState<string[]>([]);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -236,7 +233,6 @@ export default function App() {
     const deltaYPercent = (delta.y / rect.height) * 100;
     let updatedX = 0, updatedY = 0;
 
-    // حالة 1: سحب صورة منفردة
     if (id.startsWith('img-')) {
       setImages(prev => prev.map(img => {
         if (img.id === id) {
@@ -252,7 +248,6 @@ export default function App() {
         evaluateMatch(pairId, updatedX, updatedY, matchingQ.x, matchingQ.y);
       }
     } 
-    // حالة 2: سحب قصاصة ورقية منفردة
     else if (id.startsWith('q-')) {
       setQuestions(prev => prev.map(q => {
         if (q.id === id) {
@@ -268,7 +263,6 @@ export default function App() {
         evaluateMatch(pairId, matchingImg.x, matchingImg.y, updatedX, updatedY);
       }
     }
-    // حالة 3: سحب مجموعة مدمجة
     else if (id.startsWith('matched-')) {
       setMatchedGroups(prev => prev.map(group => {
         if (group.id === id) {
@@ -291,7 +285,6 @@ export default function App() {
     if (distance < 18) {
       sounds.playTape();
       
-      // ننشئ المجموعة المدمجة ونعطيها إحداثيات الصورة الحالية
       setMatchedGroups(prev => [...prev, {
         id: `matched-${pairId}`,
         x: imgX,
@@ -308,7 +301,7 @@ export default function App() {
       });
 
     } else {
-      const otherImages = CLASSROOM_PAIRS.filter(p => p.id !== pairId);
+      const otherImages = CLASSROOM_PAIRS.filter(p => p.id !== pairId && !matchedGroups.some(g => g.id === `matched-${p.id}`));
       let isNearWrong = false;
       for (const other of otherImages) {
         const otherImg = images.find(img => img.id === `img-${other.id}`);
@@ -328,21 +321,17 @@ export default function App() {
   };
 
   return (
-    // الخلفية المتدرجة الجديدة
-    <div className="w-full min-h-screen bg-gradient-to-br from-white via-rose-50 to-pink-100 p-2 md:p-6 flex flex-col justify-center items-center font-sans">
+    <div className="w-full min-h-screen bg-gray-50 p-2 md:p-6 flex flex-col justify-center items-center font-sans">
       <style>{`
         @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
         @keyframes scaleIn { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        /* نسيج الفلين تمت إزالته واستبداله بخلفية دافئة ناعمة */
-        .board-texture { background-color: rgba(255, 241, 242, 0.5); backdrop-filter: blur(8px); }
       `}</style>
 
       <main className="w-full max-w-6xl flex-grow relative flex items-center justify-center">
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          {/* إطار اللوحة متناسق مع الوردي */}
-          <div ref={boardRef} className="w-full h-[680px] md:h-[780px] rounded-3xl relative overflow-hidden shadow-xl border-[10px] md:border-[14px] border-rose-300 board-texture select-none">
+          {/* تم تعديل الحواف لتصبح سوداء والخلفية بيضاء مع تدرج وردي خفيف */}
+          <div ref={boardRef} className="w-full h-[680px] md:h-[780px] rounded-3xl relative overflow-hidden shadow-2xl border-[10px] md:border-[14px] border-neutral-900 bg-gradient-to-br from-white to-pink-50 select-none">
             
-            {/* عرض المجموعات المدمجة كعنصر واحد قابل للتحريك */}
             {matchedGroups.map((group) => {
               const pairId = group.id.replace('matched-', '');
               const pair = CLASSROOM_PAIRS.find(p => p.id === pairId)!;
@@ -360,7 +349,6 @@ export default function App() {
               );
             })}
 
-            {/* عرض الأسئلة المنفردة */}
             {questions.map((q) => {
               const pairId = q.id.replace('q-', '');
               if (matchedGroups.some(g => g.id === `matched-${pairId}`)) return null;
@@ -375,7 +363,6 @@ export default function App() {
               );
             })}
 
-            {/* عرض الصور المنفردة */}
             {images.map((img) => {
               const pairId = img.id.replace('img-', '');
               if (matchedGroups.some(g => g.id === `matched-${pairId}`)) return null;
