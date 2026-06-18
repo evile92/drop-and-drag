@@ -151,8 +151,8 @@ function NotebookPaperScrap({ question, isMatched = false }: { question: string;
 
 function TransparentTape() {
   return (
-    <div className="absolute top-[32%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 md:w-20 h-5 md:h-6 z-30 pointer-events-none select-none opacity-90 rotate-[-4deg] overflow-hidden">
-      <svg viewBox="0 0 100 30" className="w-full h-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.25)]">
+    <div className="absolute top-[38%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 md:w-36 h-8 md:h-10 z-30 pointer-events-none select-none opacity-100 rotate-[-4deg] overflow-hidden">
+      <svg viewBox="0 0 100 30" className="w-full h-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.3)]">
         <path d="M 0 4 L 3 1 L 6 4 L 9 1 L 12 4 L 15 1 L 18 4 L 21 1 L 24 4 L 27 1 L 30 4 L 33 1 L 36 4 L 39 1 L 42 4 L 45 1 L 48 4 L 51 1 L 54 4 L 57 1 L 60 4 L 63 1 L 66 4 L 69 1 L 72 4 L 75 1 L 78 4 L 81 1 L 84 4 L 87 1 L 90 4 L 93 1 L 96 4 L 100 1 L 100 26 L 96 29 L 93 26 L 90 29 L 87 26 L 84 29 L 81 26 L 78 29 L 75 26 L 72 29 L 69 26 L 66 29 L 63 26 L 60 29 L 57 26 L 54 29 L 51 26 L 48 29 L 45 26 L 42 29 L 39 26 L 36 29 L 33 26 L 30 29 L 27 26 L 24 29 L 21 26 L 18 29 L 15 26 L 12 29 L 9 26 L 6 29 L 3 26 L 0 29 Z" fill="rgba(255, 255, 255, 0.65)" stroke="rgba(255, 255, 255, 0.9)" strokeWidth="1.5" />
       </svg>
     </div>
