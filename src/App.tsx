@@ -24,6 +24,9 @@ const generatePositions = (isMobile: boolean): { images: CardPosition[]; questio
   const rowCount = Math.ceil(count / 2);
   const rowHeight = 88 / rowCount;
 
+  const imgSlots = [];
+  const qSlots = [];
+
   for (let i = 0; i < count; i++) {
     const rowIndex = Math.floor(i / 2);
     
@@ -32,18 +35,35 @@ const generatePositions = (isMobile: boolean): { images: CardPosition[]; questio
     const imgX = imgMinX + Math.random() * (imgMaxX - imgMinX);
     const imgY = 4 + rowIndex * rowHeight + (Math.random() * 4);
     const imgRotation = Math.random() * 16 - 8;
+    imgSlots.push({ x: imgX, y: imgY, rotation: imgRotation });
 
     const qMinX = isMobile ? 44 : 52;
     const qMaxX = isMobile ? 55 : 68;
     const qX = qMinX + Math.random() * (qMaxX - qMinX);
     const qY = 4 + rowIndex * rowHeight + (Math.random() * 4);
     const qRotation = Math.random() * 10 - 5;
-
-    images.push({ id: `img-${CLASSROOM_PAIRS[i].id}`, x: imgX, y: imgY, rotation: imgRotation });
-    questions.push({ id: `q-${CLASSROOM_PAIRS[i].id}`, x: qX, y: qY, rotation: qRotation });
+    qSlots.push({ x: qX, y: qY, rotation: qRotation });
   }
 
   const shuffle = <T,>(array: T[]): T[] => [...array].sort(() => Math.random() - 0.5);
+  const shuffledImgSlots = shuffle(imgSlots);
+  const shuffledQSlots = shuffle(qSlots);
+
+  for (let i = 0; i < count; i++) {
+    images.push({ 
+      id: `img-${CLASSROOM_PAIRS[i].id}`, 
+      x: shuffledImgSlots[i].x, 
+      y: shuffledImgSlots[i].y, 
+      rotation: shuffledImgSlots[i].rotation 
+    });
+    questions.push({ 
+      id: `q-${CLASSROOM_PAIRS[i].id}`, 
+      x: shuffledQSlots[i].x, 
+      y: shuffledQSlots[i].y, 
+      rotation: shuffledQSlots[i].rotation 
+    });
+  }
+
   return { images: shuffle(images), questions: shuffle(questions) };
 };
 
@@ -344,17 +364,13 @@ export default function App() {
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div ref={boardRef} className="w-full h-[680px] md:h-[780px] rounded-3xl relative overflow-hidden shadow-2xl border-[10px] md:border-[14px] border-neutral-900 bg-gradient-to-br from-white to-pink-50 select-none">
             
-            {/* البطاقة العمودية */}
-            <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm border border-pink-200 px-2 py-6 md:py-10 rounded-xl shadow-md z-0 pointer-events-none">
-              <h1 
-                className="text-pink-800 font-bold text-lg md:text-2xl tracking-[0.2em] text-center uppercase" 
-                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-              >
+            {/* بطاقة العنوان في أعلى المنتصف */}
+            <div className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-sm border border-pink-200 px-6 py-2 md:px-10 md:py-3 rounded-xl shadow-md z-0 pointer-events-none">
+              <h1 className="text-pink-800 font-bold text-lg md:text-2xl tracking-[0.1em] text-center uppercase whitespace-nowrap">
                 Culture du Maroc et de la Mauritanie
               </h1>
             </div>
 
-            {/* رسالة النجاح مع زر الإعادة */}
             {isGameComplete && (
               <div className="absolute inset-0 z-[100] flex items-center justify-center bg-white/40 backdrop-blur-sm animate-[fadeIn_0.5s_ease-out]">
                 <div className="bg-white p-8 md:p-12 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border-2 border-pink-200 text-center max-w-lg mx-4 animate-[scaleIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)] flex flex-col items-center">
@@ -417,12 +433,8 @@ export default function App() {
               
               return (
                 <DraggableCard key={img.id} id={img.id} x={img.x} y={img.y} rotation={img.rotation}>
+                  {/* هنا تم الإبقاء على الاهتزاز عند الخطأ، لكننا أزلنا رسالة Oups لكي تظهر مرة واحدة فقط في السؤال */}
                   <div className={`relative ${isWrong ? 'animate-[shake_0.4s_ease-in-out] border-red-500 rounded-lg' : ''}`}>
-                    {isWrong && (
-                      <div className="absolute -top-3 -right-3 md:-top-4 md:-right-4 bg-red-500 text-white text-xs md:text-sm font-bold px-2 py-1 rounded shadow-md z-[60] animate-bounce pointer-events-none">
-                        Oups !
-                      </div>
-                    )}
                     <ZoomableImageWrapper isMatched={false}>{pair.svg}</ZoomableImageWrapper>
                   </div>
                 </DraggableCard>
