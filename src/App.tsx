@@ -222,11 +222,20 @@ export default function App() {
     setQuestions(qPos);
   }, []);
 
+  const handleResetGame = () => {
+    const isMobile = window.innerWidth < 768;
+    const { images: imgPos, questions: qPos } = generatePositions(isMobile);
+    setImages(imgPos);
+    setQuestions(qPos);
+    setMatchedGroups([]);
+    setWrongMatches([]);
+  };
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const handleDragStart = () => { sounds.playPop(); };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    if (isGameComplete) return; // منع التحريك بعد انتهاء اللعبة
+    if (isGameComplete) return;
 
     const { active, delta } = event;
     const id = active.id.toString();
@@ -335,14 +344,30 @@ export default function App() {
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div ref={boardRef} className="w-full h-[680px] md:h-[780px] rounded-3xl relative overflow-hidden shadow-2xl border-[10px] md:border-[14px] border-neutral-900 bg-gradient-to-br from-white to-pink-50 select-none">
             
-            {/* رسالة النجاح */}
+            {/* البطاقة العمودية */}
+            <div className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm border border-pink-200 px-2 py-6 md:py-10 rounded-xl shadow-md z-0 pointer-events-none">
+              <h1 
+                className="text-pink-800 font-bold text-lg md:text-2xl tracking-[0.2em] text-center uppercase" 
+                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+              >
+                Culture du Maroc et de la Mauritanie
+              </h1>
+            </div>
+
+            {/* رسالة النجاح مع زر الإعادة */}
             {isGameComplete && (
               <div className="absolute inset-0 z-[100] flex items-center justify-center bg-white/40 backdrop-blur-sm animate-[fadeIn_0.5s_ease-out]">
-                <div className="bg-white p-8 md:p-12 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border-2 border-pink-200 text-center max-w-lg mx-4 animate-[scaleIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)]">
+                <div className="bg-white p-8 md:p-12 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border-2 border-pink-200 text-center max-w-lg mx-4 animate-[scaleIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)] flex flex-col items-center">
                   <h2 className="text-3xl md:text-4xl font-bold text-pink-600 mb-4 tracking-wide">Félicitations ! 🎉</h2>
-                  <p className="text-lg md:text-xl text-neutral-700 font-medium leading-relaxed">
+                  <p className="text-lg md:text-xl text-neutral-700 font-medium leading-relaxed mb-8">
                     Vous connaissez bien la culture marocaine et mauritanienne !
                   </p>
+                  <button 
+                    onClick={handleResetGame}
+                    className="px-8 py-3 bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white font-bold rounded-full shadow-lg transition-all transform hover:scale-105"
+                  >
+                    Rejouer
+                  </button>
                 </div>
               </div>
             )}
@@ -368,10 +393,16 @@ export default function App() {
               const pairId = q.id.replace('q-', '');
               if (matchedGroups.some(g => g.id === `matched-${pairId}`)) return null;
               const pair = CLASSROOM_PAIRS.find((p) => p.id === pairId)!;
+              const isWrong = wrongMatches.includes(q.id);
               
               return (
                 <DraggableCard key={q.id} id={q.id} x={q.x} y={q.y} rotation={q.rotation}>
-                  <div className={wrongMatches.includes(q.id) ? 'animate-[shake_0.4s_ease-in-out]' : ''}>
+                  <div className={`relative ${isWrong ? 'animate-[shake_0.4s_ease-in-out]' : ''}`}>
+                    {isWrong && (
+                      <div className="absolute -top-3 -right-3 md:-top-4 md:-right-4 bg-red-500 text-white text-xs md:text-sm font-bold px-2 py-1 rounded shadow-md z-[60] animate-bounce pointer-events-none">
+                        Oups !
+                      </div>
+                    )}
                     <NotebookPaperScrap question={pair.question} />
                   </div>
                 </DraggableCard>
@@ -382,10 +413,16 @@ export default function App() {
               const pairId = img.id.replace('img-', '');
               if (matchedGroups.some(g => g.id === `matched-${pairId}`)) return null;
               const pair = CLASSROOM_PAIRS.find((p) => p.id === pairId)!;
+              const isWrong = wrongMatches.includes(img.id);
               
               return (
                 <DraggableCard key={img.id} id={img.id} x={img.x} y={img.y} rotation={img.rotation}>
-                  <div className={wrongMatches.includes(img.id) ? 'animate-[shake_0.4s_ease-in-out] border-rose-500 rounded-lg' : ''}>
+                  <div className={`relative ${isWrong ? 'animate-[shake_0.4s_ease-in-out] border-red-500 rounded-lg' : ''}`}>
+                    {isWrong && (
+                      <div className="absolute -top-3 -right-3 md:-top-4 md:-right-4 bg-red-500 text-white text-xs md:text-sm font-bold px-2 py-1 rounded shadow-md z-[60] animate-bounce pointer-events-none">
+                        Oups !
+                      </div>
+                    )}
                     <ZoomableImageWrapper isMatched={false}>{pair.svg}</ZoomableImageWrapper>
                   </div>
                 </DraggableCard>
