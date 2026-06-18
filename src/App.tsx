@@ -6,15 +6,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-  DragStartEvent,
 } from '@dnd-kit/core';
-import { 
-  Volume2, 
-  VolumeX, 
-  RotateCcw, 
-  Shuffle, 
-  Sparkles
-} from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 interface CardPair {
   id: string;
@@ -339,8 +332,6 @@ export default function App() {
   const [questions, setQuestions] = useState<CardPosition[]>([]);
   const [matchedIds, setMatchedIds] = useState<string[]>([]);
   const [wrongMatches, setWrongMatches] = useState<string[]>([]);
-  const [isMuted, setIsMuted] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -351,13 +342,11 @@ export default function App() {
   }, []);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-  useEffect(() => { sounds.enabled = !isMuted; }, [isMuted]);
-  const handleDragStart = (event: DragStartEvent) => { setActiveId(event.active.id.toString()); sounds.playPop(); };
+  const handleDragStart = () => { sounds.playPop(); };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, delta } = event;
     const id = active.id.toString();
-    setActiveId(null);
     if (!boardRef.current) return;
     const rect = boardRef.current.getBoundingClientRect();
     const deltaXPercent = (delta.x / rect.width) * 100;
@@ -399,6 +388,16 @@ export default function App() {
     if (distance < 18) {
       sounds.playTape();
       setMatchedIds(prev => [...prev, pairId]);
+      
+      // إطلاق أوراق الاحتفال عند المطابقة الصحيحة
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#10b981', '#fbbf24', '#3b82f6', '#f43f5e'],
+        zIndex: 9999
+      });
+
     } else {
       const otherImages = CLASSROOM_PAIRS.filter(p => p.id !== pairId);
       let isNearWrong = false;
@@ -419,46 +418,15 @@ export default function App() {
     }
   };
 
-  const handleShuffle = () => {
-    sounds.playPop();
-    const isMobile = window.innerWidth < 768;
-    const { images: imgPos, questions: qPos } = generatePositions(isMobile);
-    setImages(prev => prev.map(img => matchedIds.includes(img.id.replace('img-', '')) ? img : imgPos.find(i => i.id === img.id) || img));
-    setQuestions(prev => prev.map(q => matchedIds.includes(q.id.replace('q-', '')) ? q : qPos.find(i => i.id === q.id) || q));
-  };
-
-  const handleReset = () => {
-    sounds.playPop(); setMatchedIds([]); setWrongMatches([]);
-    const isMobile = window.innerWidth < 768;
-    const { images: imgPos, questions: qPos } = generatePositions(isMobile);
-    setImages(imgPos); setQuestions(qPos);
-  };
-
   return (
-    <div className="w-full min-h-screen bg-neutral-900/10 p-2 md:p-6 flex flex-col justify-between items-center font-sans">
+    <div className="w-full min-h-screen bg-slate-50 p-2 md:p-6 flex flex-col justify-center items-center font-sans">
       <style>{`
         @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
         @keyframes scaleIn { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .cork-texture { background-color: #dfbda0; background-image: radial-gradient(#8c5e3c 1.2px, transparent 1.2px), radial-gradient(#aa7d58 1.2px, transparent 1.2px); background-size: 16px 16px; background-position: 0 0, 8px 8px; }
       `}</style>
 
-      <header className="w-full max-w-6xl bg-white/95 rounded-2xl p-4 mb-4 shadow-lg border border-amber-950/10 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-amber-800 text-white p-2 rounded-xl"><Sparkles className="w-5 h-5" /></div>
-          <div>
-            <h1 className="text-lg md:text-xl font-black text-amber-950">Activité de Correspondance • لغز المطابقة</h1>
-            <p className="text-xs text-amber-900/70 font-semibold">طابق كل سؤال وقصاصة بالصورة والرمز الصحيح</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 text-xs font-black text-amber-950">COMPLÉTÉ: {matchedIds.length} / {CLASSROOM_PAIRS.length}</div>
-          <button onClick={() => setIsMuted(!isMuted)} className="p-2 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-xl transition border border-amber-200">{isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
-          <button onClick={handleShuffle} className="p-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl transition flex items-center gap-1 font-bold text-xs"><Shuffle className="w-3.5 h-3.5" /><span className="hidden md:inline">Mélanger</span></button>
-          <button onClick={handleReset} className="p-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition flex items-center gap-1 font-bold text-xs"><RotateCcw className="w-3.5 h-3.5" /><span className="hidden sm:inline">Réinitialiser</span></button>
-        </div>
-      </header>
-
-      <main className="w-full max-w-6xl flex-grow relative">
+      <main className="w-full max-w-6xl flex-grow relative flex items-center justify-center">
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div ref={boardRef} className="w-full h-[680px] md:h-[780px] rounded-3xl relative overflow-hidden shadow-2xl border-[12px] md:border-[16px] border-amber-950 bg-amber-900 cork-texture select-none">
             <div className="absolute inset-0 pointer-events-none shadow-[inset_0_10px_35px_rgba(0,0,0,0.4)] z-40"></div>
@@ -470,7 +438,7 @@ export default function App() {
                 <div key={`matched-group-${pair.id}`} className="absolute z-20 animate-[scaleIn_0.35s_cubic-bezier(0.34,1.56,0.64,1)]" style={{ left: `${imgPos.x}%`, top: `${imgPos.y - 12}%` }}>
                   <div className="relative flex flex-col items-center">
                     <div className="relative z-10 scale-95 md:scale-100"><NotebookPaperScrap question={pair.question} isMatched={true} /></div>
-                    <div className="relative z-0 -mt-[14px] md:-mt-[22px] w-18 h-18 md:w-26 md:h-26 bg-white p-1.5 rounded-lg shadow-md border border-neutral-200">
+                    <div className="relative z-0 -mt-[10px] md:-mt-[16px] w-14 h-14 md:w-20 md:h-20 bg-white p-1.5 rounded-lg shadow-md border border-neutral-200">
                       <div className="w-full h-full bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center">{pair.svg}</div>
                     </div>
                     <TransparentTape />
@@ -494,7 +462,7 @@ export default function App() {
               if (matchedIds.includes(pair.id)) return null;
               return (
                 <DraggableCard key={img.id} id={img.id} x={img.x} y={img.y} rotation={img.rotation} isMatched={false}>
-                  <div className={`relative w-18 h-18 md:w-26 md:h-26 bg-white p-1.5 rounded-lg shadow-[1.5px_3px_8px_rgba(0,0,0,0.2)] border border-neutral-200/90 hover:shadow-[3px_6px_14px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all duration-200 ${wrongMatches.includes(img.id) ? 'animate-[shake_0.4s_ease-in-out] border-rose-500' : ''}`}>
+                  <div className={`relative w-14 h-14 md:w-20 md:h-20 bg-white p-1.5 rounded-lg shadow-[1.5px_3px_8px_rgba(0,0,0,0.2)] border border-neutral-200/90 hover:shadow-[3px_6px_14px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all duration-200 ${wrongMatches.includes(img.id) ? 'animate-[shake_0.4s_ease-in-out] border-rose-500' : ''}`}>
                     <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-20 pointer-events-none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2C10.3 2 9 3.3 9 5c0 1.5.8 2.8 2 3.5V13c-2.2 0-4 1.8-4 4s1.8 4 4 4h2c2.2 0 4-1.8 4-4s-1.8-4-4-4V8.5c1.2-.7 2-2 2-3.5 0-1.7-1.3-3-3-3z" fill="#ef4444" /></svg></div>
                     <div className="w-full h-full bg-neutral-100 rounded border border-neutral-200 overflow-hidden flex items-center justify-center">{pair.svg}</div>
                   </div>
