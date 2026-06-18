@@ -151,15 +151,14 @@ function NotebookPaperScrap({ question, isMatched = false }: { question: string;
 
 function TransparentTape() {
   return (
-    <div className="absolute top-[38%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 md:w-36 h-8 md:h-10 z-30 pointer-events-none select-none opacity-100 rotate-[-4deg] overflow-hidden">
-      <svg viewBox="0 0 100 30" className="w-full h-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.3)]">
+    <div className="absolute top-[32%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 md:w-20 h-5 md:h-6 z-30 pointer-events-none select-none opacity-90 rotate-[-4deg] overflow-hidden">
+      <svg viewBox="0 0 100 30" className="w-full h-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.25)]">
         <path d="M 0 4 L 3 1 L 6 4 L 9 1 L 12 4 L 15 1 L 18 4 L 21 1 L 24 4 L 27 1 L 30 4 L 33 1 L 36 4 L 39 1 L 42 4 L 45 1 L 48 4 L 51 1 L 54 4 L 57 1 L 60 4 L 63 1 L 66 4 L 69 1 L 72 4 L 75 1 L 78 4 L 81 1 L 84 4 L 87 1 L 90 4 L 93 1 L 96 4 L 100 1 L 100 26 L 96 29 L 93 26 L 90 29 L 87 26 L 84 29 L 81 26 L 78 29 L 75 26 L 72 29 L 69 26 L 66 29 L 63 26 L 60 29 L 57 26 L 54 29 L 51 26 L 48 29 L 45 26 L 42 29 L 39 26 L 36 29 L 33 26 L 30 29 L 27 26 L 24 29 L 21 26 L 18 29 L 15 26 L 12 29 L 9 26 L 6 29 L 3 26 L 0 29 Z" fill="rgba(255, 255, 255, 0.65)" stroke="rgba(255, 255, 255, 0.9)" strokeWidth="1.5" />
       </svg>
     </div>
   );
 }
 
-// تم تكبير حجم الصورة هنا
 function ZoomableImageWrapper({ children, isMatched }: { children: React.ReactNode, isMatched: boolean }) {
   const [scale, setScale] = useState(1);
 
@@ -214,6 +213,8 @@ export default function App() {
   const [wrongMatches, setWrongMatches] = useState<string[]>([]);
   const boardRef = useRef<HTMLDivElement>(null);
 
+  const isGameComplete = matchedGroups.length === CLASSROOM_PAIRS.length && CLASSROOM_PAIRS.length > 0;
+
   useEffect(() => {
     const isMobile = window.innerWidth < 768;
     const { images: imgPos, questions: qPos } = generatePositions(isMobile);
@@ -225,6 +226,8 @@ export default function App() {
   const handleDragStart = () => { sounds.playPop(); };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (isGameComplete) return; // منع التحريك بعد انتهاء اللعبة
+
     const { active, delta } = event;
     const id = active.id.toString();
     if (!boardRef.current) return;
@@ -325,13 +328,25 @@ export default function App() {
       <style>{`
         @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
         @keyframes scaleIn { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
       `}</style>
 
       <main className="w-full max-w-6xl flex-grow relative flex items-center justify-center">
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          {/* تم تعديل الحواف لتصبح سوداء والخلفية بيضاء مع تدرج وردي خفيف */}
           <div ref={boardRef} className="w-full h-[680px] md:h-[780px] rounded-3xl relative overflow-hidden shadow-2xl border-[10px] md:border-[14px] border-neutral-900 bg-gradient-to-br from-white to-pink-50 select-none">
             
+            {/* رسالة النجاح */}
+            {isGameComplete && (
+              <div className="absolute inset-0 z-[100] flex items-center justify-center bg-white/40 backdrop-blur-sm animate-[fadeIn_0.5s_ease-out]">
+                <div className="bg-white p-8 md:p-12 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border-2 border-pink-200 text-center max-w-lg mx-4 animate-[scaleIn_0.5s_cubic-bezier(0.34,1.56,0.64,1)]">
+                  <h2 className="text-3xl md:text-4xl font-bold text-pink-600 mb-4 tracking-wide">Félicitations ! 🎉</h2>
+                  <p className="text-lg md:text-xl text-neutral-700 font-medium leading-relaxed">
+                    Vous connaissez bien la culture marocaine et mauritanienne !
+                  </p>
+                </div>
+              </div>
+            )}
+
             {matchedGroups.map((group) => {
               const pairId = group.id.replace('matched-', '');
               const pair = CLASSROOM_PAIRS.find(p => p.id === pairId)!;
