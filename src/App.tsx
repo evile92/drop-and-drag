@@ -159,8 +159,44 @@ function TransparentTape() {
   );
 }
 
-function DraggableCard({ id, x, y, rotation, isMatched, children }: { id: string; x: number; y: number; rotation: number; isMatched: boolean; children: React.ReactNode }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id, disabled: isMatched });
+// مكوّن خاص لبطاقة الصورة للتحكم بحجمها عن طريق الماوس (Zoom in/out)
+function ZoomableImageWrapper({ children, isMatched }: { children: React.ReactNode, isMatched: boolean }) {
+  const [scale, setScale] = useState(1);
+
+  const handleWheel = (e: React.WheelEvent) => {
+    // نمنع تكبير الصورة إذا تم دمجها بالفعل
+    if (isMatched) return;
+    e.stopPropagation();
+    if (e.deltaY < 0) {
+      setScale(prev => Math.min(prev + 0.1, 1.8)); // تكبير
+    } else {
+      setScale(prev => Math.max(prev - 0.1, 0.6)); // تصغير
+    }
+  };
+
+  return (
+    <div 
+      onWheel={handleWheel}
+      style={{ transform: `scale(${scale})`, transition: 'transform 0.1s ease-out' }}
+      className={`relative w-20 h-20 md:w-28 md:h-28 bg-white p-1.5 rounded-lg shadow-[1.5px_3px_8px_rgba(0,0,0,0.2)] border border-neutral-200/90 hover:shadow-[3px_6px_14px_rgba(0,0,0,0.25)] ${isMatched ? '' : 'hover:-translate-y-0.5'} transition-all duration-200`}
+    >
+      {/* دبوس التثبيت يختفي عند التطابق */}
+      {!isMatched && (
+        <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C10.3 2 9 3.3 9 5c0 1.5.8 2.8 2 3.5V13c-2.2 0-4 1.8-4 4s1.8 4 4 4h2c2.2 0 4-1.8 4-4s-1.8-4-4-4V8.5c1.2-.7 2-2 2-3.5 0-1.7-1.3-3-3-3z" fill="#ef4444" />
+          </svg>
+        </div>
+      )}
+      <div className="w-full h-full bg-neutral-100 rounded border border-neutral-200 overflow-hidden flex items-center justify-center">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DraggableCard({ id, x, y, rotation, children }: { id: string; x: number; y: number; rotation: number; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   const style: React.CSSProperties = {
     position: 'absolute',
     left: `${x}%`,
@@ -169,8 +205,6 @@ function DraggableCard({ id, x, y, rotation, isMatched, children }: { id: string
     touchAction: 'none',
     zIndex: isDragging ? 50 : 10,
     transition: transform ? 'transform 0.02s ease-out' : 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
-    visibility: isMatched ? 'hidden' : 'visible',
-    opacity: isMatched ? 0 : 1,
   };
   return <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="select-none cursor-grab active:cursor-grabbing">{children}</div>;
 }
@@ -178,7 +212,8 @@ function DraggableCard({ id, x, y, rotation, isMatched, children }: { id: string
 export default function App() {
   const [images, setImages] = useState<CardPosition[]>([]);
   const [questions, setQuestions] = useState<CardPosition[]>([]);
-  const [matchedIds, setMatchedIds] = useState<string[]>([]);
+  // مصفوفة لتخزين العناصر المدمجة وإحداثياتها لكي تصبح قابلة للتحريك الحر
+  const [matchedGroups, setMatchedGroups] = useState<CardPosition[]>([]);
   const [wrongMatches, setWrongMatches] = useState<string[]>([]);
   const boardRef = useRef<HTMLDivElement>(null);
 
@@ -201,6 +236,7 @@ export default function App() {
     const deltaYPercent = (delta.y / rect.height) * 100;
     let updatedX = 0, updatedY = 0;
 
+    // حالة 1: سحب صورة منفردة
     if (id.startsWith('img-')) {
       setImages(prev => prev.map(img => {
         if (img.id === id) {
@@ -212,8 +248,12 @@ export default function App() {
       }));
       const pairId = id.replace('img-', '');
       const matchingQ = questions.find(q => q.id === `q-${pairId}`);
-      if (matchingQ && !matchedIds.includes(pairId)) evaluateMatch(pairId, updatedX, updatedY, matchingQ.x, matchingQ.y);
-    } else if (id.startsWith('q-')) {
+      if (matchingQ && !matchedGroups.some(g => g.id === `matched-${pairId}`)) {
+        evaluateMatch(pairId, updatedX, updatedY, matchingQ.x, matchingQ.y);
+      }
+    } 
+    // حالة 2: سحب قصاصة ورقية منفردة
+    else if (id.startsWith('q-')) {
       setQuestions(prev => prev.map(q => {
         if (q.id === id) {
           updatedX = Math.max(0, Math.min(88, q.x + deltaXPercent));
@@ -224,7 +264,22 @@ export default function App() {
       }));
       const pairId = id.replace('q-', '');
       const matchingImg = images.find(img => img.id === `img-${pairId}`);
-      if (matchingImg && !matchedIds.includes(pairId)) evaluateMatch(pairId, matchingImg.x, matchingImg.y, updatedX, updatedY);
+      if (matchingImg && !matchedGroups.some(g => g.id === `matched-${pairId}`)) {
+        evaluateMatch(pairId, matchingImg.x, matchingImg.y, updatedX, updatedY);
+      }
+    }
+    // حالة 3: سحب مجموعة مدمجة
+    else if (id.startsWith('matched-')) {
+      setMatchedGroups(prev => prev.map(group => {
+        if (group.id === id) {
+          return { 
+            ...group, 
+            x: Math.max(0, Math.min(88, group.x + deltaXPercent)), 
+            y: Math.max(0, Math.min(88, group.y + deltaYPercent)) 
+          };
+        }
+        return group;
+      }));
     }
   };
 
@@ -235,7 +290,14 @@ export default function App() {
 
     if (distance < 18) {
       sounds.playTape();
-      setMatchedIds(prev => [...prev, pairId]);
+      
+      // ننشئ المجموعة المدمجة ونعطيها إحداثيات الصورة الحالية
+      setMatchedGroups(prev => [...prev, {
+        id: `matched-${pairId}`,
+        x: imgX,
+        y: imgY,
+        rotation: (Math.random() * 10) - 5
+      }]);
       
       confetti({
         particleCount: 80,
@@ -266,52 +328,63 @@ export default function App() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 p-2 md:p-6 flex flex-col justify-center items-center font-sans">
+    // الخلفية المتدرجة الجديدة
+    <div className="w-full min-h-screen bg-gradient-to-br from-white via-rose-50 to-pink-100 p-2 md:p-6 flex flex-col justify-center items-center font-sans">
       <style>{`
         @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
         @keyframes scaleIn { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .cork-texture { background-color: #dfbda0; background-image: radial-gradient(#8c5e3c 1.2px, transparent 1.2px), radial-gradient(#aa7d58 1.2px, transparent 1.2px); background-size: 16px 16px; background-position: 0 0, 8px 8px; }
+        /* نسيج الفلين تمت إزالته واستبداله بخلفية دافئة ناعمة */
+        .board-texture { background-color: rgba(255, 241, 242, 0.5); backdrop-filter: blur(8px); }
       `}</style>
 
       <main className="w-full max-w-6xl flex-grow relative flex items-center justify-center">
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div ref={boardRef} className="w-full h-[680px] md:h-[780px] rounded-3xl relative overflow-hidden shadow-2xl border-[12px] md:border-[16px] border-amber-950 bg-amber-900 cork-texture select-none">
-            <div className="absolute inset-0 pointer-events-none shadow-[inset_0_10px_35px_rgba(0,0,0,0.4)] z-40"></div>
-
-            {CLASSROOM_PAIRS.map((pair) => {
-              if (!matchedIds.includes(pair.id)) return null;
-              const imgPos = images.find(img => img.id === `img-${pair.id}`)!;
+          {/* إطار اللوحة متناسق مع الوردي */}
+          <div ref={boardRef} className="w-full h-[680px] md:h-[780px] rounded-3xl relative overflow-hidden shadow-xl border-[10px] md:border-[14px] border-rose-300 board-texture select-none">
+            
+            {/* عرض المجموعات المدمجة كعنصر واحد قابل للتحريك */}
+            {matchedGroups.map((group) => {
+              const pairId = group.id.replace('matched-', '');
+              const pair = CLASSROOM_PAIRS.find(p => p.id === pairId)!;
+              
               return (
-                <div key={`matched-group-${pair.id}`} className="absolute z-20 animate-[scaleIn_0.35s_cubic-bezier(0.34,1.56,0.64,1)]" style={{ left: `${imgPos.x}%`, top: `${imgPos.y - 12}%` }}>
-                  <div className="relative flex flex-col items-center">
+                <DraggableCard key={group.id} id={group.id} x={group.x} y={group.y} rotation={group.rotation}>
+                  <div className="relative flex flex-col items-center animate-[scaleIn_0.35s_cubic-bezier(0.34,1.56,0.64,1)]">
                     <div className="relative z-10 scale-95 md:scale-100"><NotebookPaperScrap question={pair.question} isMatched={true} /></div>
-                    <div className="relative z-0 -mt-[10px] md:-mt-[16px] w-14 h-14 md:w-20 md:h-20 bg-white p-1.5 rounded-lg shadow-md border border-neutral-200">
-                      <div className="w-full h-full bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center">{pair.svg}</div>
+                    <div className="relative z-0 -mt-[12px] md:-mt-[18px]">
+                      <ZoomableImageWrapper isMatched={true}>{pair.svg}</ZoomableImageWrapper>
                     </div>
                     <TransparentTape />
                   </div>
-                </div>
-              );
-            })}
-
-            {questions.map((q) => {
-              const pair = CLASSROOM_PAIRS.find((p) => p.id === q.id.replace('q-', ''))!;
-              if (matchedIds.includes(pair.id)) return null;
-              return (
-                <DraggableCard key={q.id} id={q.id} x={q.x} y={q.y} rotation={q.rotation} isMatched={false}>
-                  <div className={wrongMatches.includes(q.id) ? 'animate-[shake_0.4s_ease-in-out]' : ''}><NotebookPaperScrap question={pair.question} /></div>
                 </DraggableCard>
               );
             })}
 
-            {images.map((img) => {
-              const pair = CLASSROOM_PAIRS.find((p) => p.id === img.id.replace('img-', ''))!;
-              if (matchedIds.includes(pair.id)) return null;
+            {/* عرض الأسئلة المنفردة */}
+            {questions.map((q) => {
+              const pairId = q.id.replace('q-', '');
+              if (matchedGroups.some(g => g.id === `matched-${pairId}`)) return null;
+              const pair = CLASSROOM_PAIRS.find((p) => p.id === pairId)!;
+              
               return (
-                <DraggableCard key={img.id} id={img.id} x={img.x} y={img.y} rotation={img.rotation} isMatched={false}>
-                  <div className={`relative w-14 h-14 md:w-20 md:h-20 bg-white p-1.5 rounded-lg shadow-[1.5px_3px_8px_rgba(0,0,0,0.2)] border border-neutral-200/90 hover:shadow-[3px_6px_14px_rgba(0,0,0,0.25)] hover:-translate-y-0.5 transition-all duration-200 ${wrongMatches.includes(img.id) ? 'animate-[shake_0.4s_ease-in-out] border-rose-500' : ''}`}>
-                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 z-20 pointer-events-none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2C10.3 2 9 3.3 9 5c0 1.5.8 2.8 2 3.5V13c-2.2 0-4 1.8-4 4s1.8 4 4 4h2c2.2 0 4-1.8 4-4s-1.8-4-4-4V8.5c1.2-.7 2-2 2-3.5 0-1.7-1.3-3-3-3z" fill="#ef4444" /></svg></div>
-                    <div className="w-full h-full bg-neutral-100 rounded border border-neutral-200 overflow-hidden flex items-center justify-center">{pair.svg}</div>
+                <DraggableCard key={q.id} id={q.id} x={q.x} y={q.y} rotation={q.rotation}>
+                  <div className={wrongMatches.includes(q.id) ? 'animate-[shake_0.4s_ease-in-out]' : ''}>
+                    <NotebookPaperScrap question={pair.question} />
+                  </div>
+                </DraggableCard>
+              );
+            })}
+
+            {/* عرض الصور المنفردة */}
+            {images.map((img) => {
+              const pairId = img.id.replace('img-', '');
+              if (matchedGroups.some(g => g.id === `matched-${pairId}`)) return null;
+              const pair = CLASSROOM_PAIRS.find((p) => p.id === pairId)!;
+              
+              return (
+                <DraggableCard key={img.id} id={img.id} x={img.x} y={img.y} rotation={img.rotation}>
+                  <div className={wrongMatches.includes(img.id) ? 'animate-[shake_0.4s_ease-in-out] border-rose-500 rounded-lg' : ''}>
+                    <ZoomableImageWrapper isMatched={false}>{pair.svg}</ZoomableImageWrapper>
                   </div>
                 </DraggableCard>
               );
